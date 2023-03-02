@@ -177,6 +177,7 @@ function addEmployee() {
         })
 }
 function updateEmployee() {
+    //MYSQL query to get the roles
     connection.promise().query("SELECT * FROM roles;")
         .then(([rows, fields]) => {
             var roles = rows.map((element) => {
