@@ -17,14 +17,14 @@ const connection = mysql.createConnection({
     user: "root",
     password: "Punkie15",
     database: "business_db"
-}, console.log("Connected to business_db"))
+})
 
 //function to be call initially
 const question = [{
     type: "list",
     message: "What would you like to do?",
     name: "action",
-    choices: ["View all departments", "View all roles", "View all employees", "Add a department", "Add a role", "Add an employee", "Update an employee role", "Quit"]
+    choices: ["View all departments", "View all roles", "View all employees", "Add a department", "Add a role", "Add an employee", "Update an employee role", "Remove department", "Remove role", "Remove employee", "Quit"]
 }]
 function init() {
     inquirer.prompt(question).then((data) => {
@@ -50,6 +50,15 @@ function init() {
             case "Update an employee role":
                 updateEmployee()
                 break
+            case "Remove department":
+                removeDepartment()
+                break
+            case "Remove role":
+                removeRole()
+                break
+            case "Remove employee":
+                removeEmployee()
+                break
             case "Quit":
                 break
             default:
@@ -69,7 +78,7 @@ function viewDepartments() {
 }
 function viewRoles() {
     //MYSQL query to find the table of roles
-    connection.promise().query('SELECT * FROM roles \n INNER JOIN departments ON roles.department_id = departments.id;')
+    connection.promise().query('SELECT roles.id, roles.title, roles.salary, departments.name FROM roles \n INNER JOIN departments ON roles.department_id = departments.id;')
         .then(([rows, fields]) => {
             console.table(rows)
         })
@@ -78,7 +87,7 @@ function viewRoles() {
 }
 function viewEmployees() {
     //MYSQL query to find the table of employee
-    connection.promise().query('SELECT * FROM employees \n INNER JOIN roles ON roles.id = employees.role_id \n INNER JOIN departments ON roles.department_id = departments.id;')
+    connection.promise().query('SELECT employees.id, employees.first_name, employees.last_name, employees.role_id, roles.title, roles.salary, departments.name, e2.first_name as manager_first_name, e2.last_name as manager_last_name FROM employees INNER JOIN roles ON roles.id = employees.role_id INNER JOIN departments ON roles.department_id = departments.id LEFT JOIN employees e2 ON employees.manager_id = e2.id;')
         .then(([rows, fields]) => {
             console.table(rows)
         })
@@ -200,18 +209,77 @@ function updateEmployee() {
                         name: "uRole",
                         choices: roles
                     }])
-                    .then((data) => {
-                        var employee = employees.indexOf(data.uName) + 1
-                        var role = roles.indexOf(data.uRole) + 1
-                        connection.promise().query(`UPDATE employees \n SET role_id = ? \n WHERE id = ?;`, [role, employee])
-                        .then(() => {console.log(`Updated ${data.uName} with the role of ${data.uRole}`)})
-                        .then(() => init())
-                    })
+                        .then((data) => {
+                            var employee = employees.indexOf(data.uName) + 1
+                            var role = roles.indexOf(data.uRole) + 1
+                            connection.promise().query(`UPDATE employees \n SET role_id = ? \n WHERE id = ?;`, [role, employee])
+                                .then(() => { console.log(`Updated ${data.uName} with the role of ${data.uRole}`) })
+                                .then(() => init())
+                        })
                 })
-                
+
+        })
+}
+function removeDepartment() {
+    connection.promise().query(`SELECT * FROM departments`)
+        .then(([rows, fields]) => {
+            //getting the list of current departments
+            var departments = rows.map((element) => {
+                return element.name
+            })
+            inquirer.prompt([{
+                type: "list",
+                message: "Which department do you want to remove?",
+                name: "rmDepartment",
+                choices: departments
+            }])
+                .then((data) => {
+                    connection.promise().query(`DELETE FROM departments WHERE name=?`, [data.rmDepartment])
+                        .then(() => console.log(`Deleted ${data.rmDepartment} from departments`))
+                        .then(() => init())
+                })
+        })
+}
+function removeRole() {
+    connection.promise().query('SELECT * FROM roles')
+        .then(([rows, fields]) => {
+            //MYSQL query to get the roles
+            var roles = rows.map((element) => {
+                return element.title
+            })
+            inquirer.prompt([{
+                type: "list",
+                message: "Which role do you want to remove?",
+                name: "rmRole",
+                choices: roles
+            }])
+                .then((data) => {
+                    connection.promise().query('DELETE FROM roles WHERE name=?', [data.rmRole])
+                        .then(() => console.log(`Removed ${data.rmRole} from roles`))
+                        .then(() => init())
+                })
+        })
+}
+function removeEmployee() {
+    //MYSQL query to get employees
+    connection.promise().query("SELECT * FROM employees")
+        .then(([rows, fields]) => {
+            var employees = rows.map((element) => {
+                return element.first_name + " " + element.last_name
+            })
+            inquirer.prompt([{
+                type: "list",
+                message: "Which employee would you like to remove?",
+                name: "rmEmployee",
+                choices: employees
+            }])
+            .then((data) => {
+                var employee = employees.indexOf(data.rmEmployee) + 1
+                connection.promise().query('DELETE FROM employees WHERE id=?', [employee])
+                .then(() => console.log(`Removed ${data.rmEmployee} from employees`))
+                .then(() => init())
+            })
         })
 }
 init()
-app.listen(PORT, () => {
-    console.log(`Listening on ${PORT}`)
-})
+app.listen(PORT, () => {})

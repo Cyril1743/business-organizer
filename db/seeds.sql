@@ -30,5 +30,4 @@ VALUES
     ("Samuel", "Stark", 1, 1),
     ("Josh", "Doe", 1, 1),
     ("Ryan", "Rosales", 3, NULL),
-    ("Conrad", "Hancock", 4, 4);
-SELECT * FROM roles
+    ("Conrad", "Hancock", 4, 5);

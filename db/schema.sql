@@ -5,7 +5,6 @@ USE business_db
 CREATE TABLE departments (
     id INT NOT NULL PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(30)
-    ON DELETE CASCADE
 );
 
 CREATE TABLE roles (
@@ -16,7 +15,7 @@ CREATE TABLE roles (
     CONSTRAINT Fk_department_id 
     FOREIGN KEY (department_id) 
     REFERENCES departments (id)
-    ON DELETE SET NULL
+    ON DELETE CASCADE
 );
 
 CREATE TABLE employees (
@@ -28,6 +27,7 @@ CREATE TABLE employees (
     CONSTRAINT Fk_role_id
     FOREIGN KEY (role_id)
     REFERENCES roles (id)
+    ON DELETE SET NULL
 );
 
 ALTER TABLE employees
