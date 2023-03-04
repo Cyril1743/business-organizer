@@ -84,7 +84,7 @@ function viewDepartments() {
 }
 function viewRoles() {
     //MYSQL query to find the table of roles
-    connection.promise().query('SELECT roles.id, roles.title, roles.salary, departments.name FROM roles \n INNER JOIN departments ON roles.department_id = departments.id;')
+    connection.promise().query('SELECT roles.id, roles.title, roles.salary, departments.name AS department FROM roles \n INNER JOIN departments ON roles.department_id = departments.id;')
         .then(([rows, fields]) => {
             console.table(rows)
         })
@@ -93,7 +93,7 @@ function viewRoles() {
 }
 function viewEmployees() {
     //MYSQL query to find the table of employee
-    connection.promise().query('SELECT employees.id, employees.first_name, employees.last_name, employees.role_id, roles.title, roles.salary, departments.name, e2.first_name as manager_first_name, e2.last_name as manager_last_name FROM employees INNER JOIN roles ON roles.id = employees.role_id INNER JOIN departments ON roles.department_id = departments.id LEFT JOIN employees e2 ON employees.manager_id = e2.id;')
+    connection.promise().query('SELECT employees.id, employees.first_name, employees.last_name, roles.title, roles.salary, departments.name AS department, e2.first_name as manager_first_name, e2.last_name as manager_last_name FROM employees INNER JOIN roles ON roles.id = employees.role_id INNER JOIN departments ON roles.department_id = departments.id LEFT JOIN employees e2 ON employees.manager_id = e2.id;')
         .then(([rows, fields]) => {
             console.table(rows)
         })
@@ -185,7 +185,6 @@ function addEmployee() {
                             for (var i = 0; i < rolesAndIds.length; i++) {
                                 if (data.eRole == rolesAndIds[i].title) {
                                     var role = rolesAndIds[i].id
-                                    console.log(role)
                                 }
                             }
                             //Finding the manager id if not none
@@ -196,7 +195,6 @@ function addEmployee() {
                                 for (let i = 0; i < rows.length; i++) {
                                     if (firstname[0] == rows[i].first_name) {
                                         var manager = rows[i].id
-                                        console.log(manager)
                                     }
                                 }
                             }
