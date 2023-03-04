@@ -24,7 +24,7 @@ const question = [{
     type: "list",
     message: "What would you like to do?",
     name: "action",
-    choices: ["View all departments", "View all roles", "View all employees", "Add a department", "Add a role", "Add an employee", "Update an employee role", "Remove department", "Remove role", "Remove employee", "Quit"]
+    choices: ["View all departments", "View all roles", "View all employees", "Add a department", "Add a role", "Add an employee", "Update an employee role", "Update an employee's manager", "Remove department", "Remove role", "Remove employee", "View employees by manager", "Quit"]
 }]
 function init() {
     inquirer.prompt(question).then((data) => {
@@ -50,6 +50,9 @@ function init() {
             case "Update an employee role":
                 updateEmployee()
                 break
+            case "Update an employee's manager":
+                updateManager()
+                break
             case "Remove department":
                 removeDepartment()
                 break
@@ -58,6 +61,9 @@ function init() {
                 break
             case "Remove employee":
                 removeEmployee()
+                break
+            case "View employees by manager":
+                viewByManager()
                 break
             case "Quit":
                 break
@@ -130,14 +136,14 @@ function addRole() {
             }]).then((data) => {
                 //Finding the department id
                 for (var i = 0; i < rows.length; i++) {
-                    if (rows[i].name == data.rDepartment){
+                    if (rows[i].name == data.rDepartment) {
                         var id = rows[i].id
                     }
                 }
                 connection.promise().query('INSERT INTO roles (title, salary, department_id) \n VALUES(?,?,?);', [data.rName, data.rSalary, id])
                     .then(console.log(`Added ${data.rName} to ${data.rDepartment}`))
                     .then(() => init());
-             })
+            })
         });
 }
 function addEmployee() {
@@ -176,8 +182,8 @@ function addEmployee() {
                     }])
                         .then((data) => {
                             //Finding the role id
-                            for (var i = 0; i < rolesAndIds.length; i++){
-                                if (data.eRole == rolesAndIds[i].title){
+                            for (var i = 0; i < rolesAndIds.length; i++) {
+                                if (data.eRole == rolesAndIds[i].title) {
                                     var role = rolesAndIds[i].id
                                     console.log(role)
                                 }
@@ -188,7 +194,7 @@ function addEmployee() {
                             } else {
                                 var firstname = data.eManager.split(" ")
                                 for (let i = 0; i < rows.length; i++) {
-                                    if (firstname[0] == rows[i].first_name){
+                                    if (firstname[0] == rows[i].first_name) {
                                         var manager = rows[i].id
                                         console.log(manager)
                                     }
@@ -227,14 +233,14 @@ function updateEmployee() {
                         choices: roles
                     }])
                         .then((data) => {
-                            for (var i = 0; i < rolesAndIds.length; i++){
-                                if (data.uRole == rolesAndIds[i].title){
+                            for (var i = 0; i < rolesAndIds.length; i++) {
+                                if (data.uRole == rolesAndIds[i].title) {
                                     var role = rolesAndIds[i].id
                                 }
                             }
                             var name = data.uName.split(" ")
                             for (let i = 0; i < rows.length; i++) {
-                                if (name[0] == rows[i].first_name){
+                                if (name[0] == rows[i].first_name) {
                                     var nameId = rows[i].id
                                 }
                             }
@@ -244,6 +250,42 @@ function updateEmployee() {
                         })
                 })
 
+        })
+}
+function updateManager() {
+    connection.promise().query("SELECT * FROM employees")
+        .then(([rows, fields]) => {
+            var employees = rows.map((element) => {
+                return element.first_name + " " + element.last_name
+            })
+            inquirer.prompt([{
+                type: "list",
+                message: "Which employee would you like to update?",
+                name: "uEName",
+                choices: employees
+            }, {
+                type: "list",
+                message: "Who is their new manager?",
+                name: "uMName",
+                choices: employees
+            }])
+                .then((data) => {
+                    var eName = data.uEName.split(" ")
+                    for (let i = 0; i < rows.length; i++) {
+                        if (eName[0] == rows[i].first_name) {
+                            var nameId = rows[i].id
+                        }
+                    }
+                    var mName = data.uMName.split(" ")
+                    for (let i = 0; i < rows.length; i++) {
+                        if (mName[0] == rows[i].first_name) {
+                            var mNameId = rows[i].id
+                        }
+                    }
+                    connection.promise().query("UPDATE employees \n SET manager_id = ? \n WHERE id = ?", [mNameId, nameId])
+                        .then(() => console.log(`Updated ${data.uEName}'s manager`))
+                        .then(init())
+                })
         })
 }
 function removeDepartment() {
@@ -299,13 +341,44 @@ function removeEmployee() {
                 name: "rmEmployee",
                 choices: employees
             }])
-            .then((data) => {
-                var name = data.rmEmployee.split(" ")
-                connection.promise().query('DELETE FROM employees WHERE first_name=?', [name[0]])
-                .then(() => console.log(`Removed ${data.rmEmployee} from employees`))
-                .then(() => init())
+                .then((data) => {
+                    var Ename = data.rmEmployee.split(" ")
+                    connection.promise().query('DELETE FROM employees WHERE first_name=?', [Ename[0]])
+                        .then(() => console.log(`Removed ${data.rmEmployee} from employees`))
+                        .then(() => init())
+                })
+        })
+}
+function viewByManager() {
+    connection.promise().query("SELECT * FROM employees")
+        .then(([rows, fields]) => {
+            var employees = rows.map((element) => {
+                return element.first_name + " " + element.last_name
             })
+            inquirer.prompt([{
+                type: "list",
+                message: "Which manager do you want to view?",
+                name: "vManager",
+                choices: employees
+            }])
+                .then((data) => {
+                    var Ename = data.vManager.split(" ")
+                    for (var i = 0; i < rows.length; i++) {
+                        if (Ename[0] == rows[i].first_name) {
+                            var mId = rows[i].id
+                        }
+                    }
+                    connection.promise().query(`SELECT employees.first_name, employees.last_name, e2.first_name AS manager_first_name, e2.last_name AS manager_last_name FROM employees INNER JOIN employees e2 ON employees.manager_id = e2.id WHERE employees.manager_id=?;`, [mId])
+                        .then(([rows, fields]) => {
+                            if (rows == []){
+                            console.table(rows)
+                            } else {
+                                console.log(`No employees report to ${data.vManager}`)
+                            }
+                        })
+                        .then(() => init())
+                })
         })
 }
 init()
-app.listen(PORT, () => {})
+app.listen(PORT, () => { })
