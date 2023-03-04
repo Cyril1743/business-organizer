@@ -370,7 +370,7 @@ function viewByManager() {
                     }
                     connection.promise().query(`SELECT employees.first_name, employees.last_name, e2.first_name AS manager_first_name, e2.last_name AS manager_last_name FROM employees INNER JOIN employees e2 ON employees.manager_id = e2.id WHERE employees.manager_id=?;`, [mId])
                         .then(([rows, fields]) => {
-                            if (rows == []){
+                            if (rows.length != 0){
                             console.table(rows)
                             } else {
                                 console.log(`No employees report to ${data.vManager}`)
