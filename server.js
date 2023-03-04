@@ -129,11 +129,15 @@ function addRole() {
                 choices: departments
             }]).then((data) => {
                 //Finding the department id
-                var index = departments.indexOf(data.rDepartment)
-                connection.promise().query('INSERT INTO roles (title, salary, department_id) \n VALUES(?,?,?);', [data.rName, data.rSalary, index + 1])
-                    .then(console.log(`Added ${data.rName} to ${departments[index]}`))
+                for (var i = 0; i < rows.length; i++) {
+                    if (rows[i].name == data.rDepartment){
+                        var id = rows[i].id
+                    }
+                }
+                connection.promise().query('INSERT INTO roles (title, salary, department_id) \n VALUES(?,?,?);', [data.rName, data.rSalary, id])
+                    .then(console.log(`Added ${data.rName} to ${data.rDepartment}`))
                     .then(() => init());
-            })
+             })
         });
 }
 function addEmployee() {
@@ -143,6 +147,7 @@ function addEmployee() {
             var roles = rows.map((element) => {
                 return element.title
             })
+            var rolesAndIds = rows
             //MYSQL query to get employees
             connection.promise().query("SELECT * FROM employees")
                 .then(([rows, fields]) => {
@@ -171,14 +176,25 @@ function addEmployee() {
                     }])
                         .then((data) => {
                             //Finding the role id
-                            var role = roles.indexOf(data.eRole)
+                            for (var i = 0; i < rolesAndIds.length; i++){
+                                if (data.eRole == rolesAndIds[i].title){
+                                    var role = rolesAndIds[i].id
+                                    console.log(role)
+                                }
+                            }
                             //Finding the manager id if not none
                             if (data.eManager == "None") {
                                 var manager = null
                             } else {
-                                var manager = employees.indexOf(data.eManager) + 1
+                                var firstname = data.eManager.split(" ")
+                                for (let i = 0; i < rows.length; i++) {
+                                    if (firstname[0] == rows[i].first_name){
+                                        var manager = rows[i].id
+                                        console.log(manager)
+                                    }
+                                }
                             }
-                            connection.promise().query(`INSERT INTO employees (first_name, last_name, role_id, manager_id) \n VALUES (?,?,?,?);`, [data.eFirstName, data.eLastName, role + 1, manager])
+                            connection.promise().query(`INSERT INTO employees (first_name, last_name, role_id, manager_id) \n VALUES (?,?,?,?);`, [data.eFirstName, data.eLastName, role, manager])
                                 .then(() => console.log(`Added ${data.eFirstName} ${data.eLastName} to the database`))
                                 .then(() => init())
                         })
@@ -192,6 +208,7 @@ function updateEmployee() {
             var roles = rows.map((element) => {
                 return element.title
             })
+            var rolesAndIds = rows
             //MYSQL query to get employees
             connection.promise().query("SELECT * FROM employees")
                 .then(([rows, fields]) => {
@@ -210,9 +227,18 @@ function updateEmployee() {
                         choices: roles
                     }])
                         .then((data) => {
-                            var employee = employees.indexOf(data.uName) + 1
-                            var role = roles.indexOf(data.uRole) + 1
-                            connection.promise().query(`UPDATE employees \n SET role_id = ? \n WHERE id = ?;`, [role, employee])
+                            for (var i = 0; i < rolesAndIds.length; i++){
+                                if (data.uRole == rolesAndIds[i].title){
+                                    var role = rolesAndIds[i].id
+                                }
+                            }
+                            var name = data.uName.split(" ")
+                            for (let i = 0; i < rows.length; i++) {
+                                if (name[0] == rows[i].first_name){
+                                    var nameId = rows[i].id
+                                }
+                            }
+                            connection.promise().query(`UPDATE employees \n SET role_id = ? \n WHERE id = ?;`, [role, nameId])
                                 .then(() => { console.log(`Updated ${data.uName} with the role of ${data.uRole}`) })
                                 .then(() => init())
                         })
@@ -254,7 +280,7 @@ function removeRole() {
                 choices: roles
             }])
                 .then((data) => {
-                    connection.promise().query('DELETE FROM roles WHERE name=?', [data.rmRole])
+                    connection.promise().query('DELETE FROM roles WHERE title=?', [data.rmRole])
                         .then(() => console.log(`Removed ${data.rmRole} from roles`))
                         .then(() => init())
                 })
@@ -274,8 +300,8 @@ function removeEmployee() {
                 choices: employees
             }])
             .then((data) => {
-                var employee = employees.indexOf(data.rmEmployee) + 1
-                connection.promise().query('DELETE FROM employees WHERE id=?', [employee])
+                var name = data.rmEmployee.split(" ")
+                connection.promise().query('DELETE FROM employees WHERE first_name=?', [name[0]])
                 .then(() => console.log(`Removed ${data.rmEmployee} from employees`))
                 .then(() => init())
             })

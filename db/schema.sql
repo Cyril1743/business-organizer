@@ -31,4 +31,5 @@ CREATE TABLE employees (
 );
 
 ALTER TABLE employees
-ADD FOREIGN KEY (manager_id) REFERENCES employees (id);
+ADD FOREIGN KEY (manager_id) REFERENCES employees (id)
+ON DELETE SET NULL;
